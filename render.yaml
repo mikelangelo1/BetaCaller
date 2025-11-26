@@ -1,0 +1,145 @@
+services:
+  # Backend API Service
+  - type: web
+    name: betacaller-api
+    env: docker
+    plan: starter
+    region: oregon
+    # Important: Point to backend subfolder
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DB_HOST
+        fromDatabase:
+          name: betacaller-postgres
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: betacaller-postgres
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: betacaller-postgres
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: betacaller-postgres
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: betacaller-postgres
+          property: password
+      # JWT Configuration (required)
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      # Frontend URL (update with your Flutter app URL if you have one)
+      - key: FRONTEND_URL
+        value: https://betacaller.com
+      # CORS (update with your domains)
+      - key: CORS_ORIGIN
+        value: https://betacaller.com,http://localhost:3000
+      # Initial user balance
+      - key: INITIAL_BALANCE
+        value: 10.00
+      # Default call rate
+      - key: DEFAULT_CALL_RATE
+        value: 0.012
+      # VoIP Provider Configuration
+      - key: VOIP_DEFAULT_PROVIDER
+        value: telnyx
+      - key: VOIP_PROVIDER_ORDER
+        value: telnyx,twilio,voximplant
+      - key: VOIP_MAX_FAILURES
+        value: 3
+      - key: VOIP_AUTO_FAILOVER
+        value: true
+      # Telnyx Configuration (Add your keys via Render dashboard)
+      - key: TELNYX_API_KEY
+        sync: false
+      - key: TELNYX_PUBLIC_KEY
+        sync: false
+      - key: TELNYX_APP_ID
+        sync: false
+      - key: TELNYX_CONNECTION_ID
+        sync: false
+      - key: TELNYX_PHONE_NUMBER
+        sync: false
+      - key: TELNYX_WEBHOOK_SECRET
+        sync: false
+      # Twilio Configuration (Add your keys via Render dashboard)
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_API_KEY_SID
+        sync: false
+      - key: TWILIO_API_KEY_SECRET
+        sync: false
+      - key: TWILIO_TWIML_APP_SID
+        sync: false
+      - key: TWILIO_CALLER_NUMBER
+        sync: false
+      - key: TWILIO_WEBHOOK_SECRET
+        sync: false
+      # Voximplant Configuration (Add your keys via Render dashboard)
+      - key: VOXIMPLANT_ACCOUNT_ID
+        sync: false
+      - key: VOXIMPLANT_ACCOUNT_NAME
+        sync: false
+      - key: VOXIMPLANT_API_KEY
+        sync: false
+      - key: VOXIMPLANT_APPLICATION_ID
+        sync: false
+      - key: VOXIMPLANT_APPLICATION_NAME
+        sync: false
+      - key: VOXIMPLANT_RULE_NAME
+        sync: false
+      - key: VOXIMPLANT_CALLER_NUMBER
+        sync: false
+      - key: VOXIMPLANT_WEBHOOK_SECRET
+        sync: false
+      # Google OAuth (Optional - for web auth)
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CALLBACK_URL
+        value: https://betacaller-api.onrender.com/api/auth/google/callback
+      # Apple Sign In (Optional - for iOS auth)
+      - key: APPLE_CLIENT_ID
+        sync: false
+      - key: APPLE_TEAM_ID
+        sync: false
+      - key: APPLE_KEY_ID
+        sync: false
+      - key: APPLE_PRIVATE_KEY
+        sync: false
+      - key: APPLE_CALLBACK_URL
+        value: https://betacaller-api.onrender.com/api/auth/apple/callback
+      # Payment Gateway Configuration
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: NGN_TO_USD_RATE
+        value: 1650
+    healthCheckPath: /api
+
+databases:
+  - name: betacaller-postgres
+    databaseName: betacaller
+    user: betacaller
+    plan: starter
+    region: oregon
