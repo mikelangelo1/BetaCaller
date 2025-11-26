@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:beta_caller/services/api_service.dart';
+import 'package:beta_caller/services/betacaller_api_service.dart';
 
 class BalanceProvider with ChangeNotifier {
   double _balance = 0.0;
@@ -13,19 +13,21 @@ class BalanceProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
   List<Transaction> get transactions => _transactions;
 
-  final ApiService _apiService = ApiService();
+  final BetaCallerApiService _apiService = BetaCallerApiService();
 
   BalanceProvider() {
+    // Don't await to prevent blocking app startup
     _loadBalanceFromStorage();
   }
 
   Future<void> _loadBalanceFromStorage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _balance = prefs.getDouble('user_balance') ?? 0.0;
+      _balance = prefs.getDouble('user_balance') ?? 10.0; // Default 10.0
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading balance from storage: $e');
+      _balance = 10.0; // Fallback to default
     }
   }
 
@@ -35,11 +37,11 @@ class BalanceProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Fetch balance from backend
-      final response = await _apiService.getBalance();
+      // Fetch balance from backend using getUserProfile
+      final response = await _apiService.getUserProfile();
 
       if (response['success'] == true) {
-        _balance = response['balance']?.toDouble() ?? 0.0;
+        _balance = response['balance']?.toDouble() ?? 10.0;
 
         // Save to local storage
         final prefs = await SharedPreferences.getInstance();
@@ -48,7 +50,7 @@ class BalanceProvider with ChangeNotifier {
         _isLoading = false;
         notifyListeners();
       } else {
-        _errorMessage = response['message'] ?? 'Failed to fetch balance';
+        _errorMessage = response['error'] ?? 'Failed to fetch balance';
         _isLoading = false;
         notifyListeners();
       }
@@ -59,17 +61,28 @@ class BalanceProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> addBalance(double amount) async {
+  Future<bool> addBalance({
+    required double amount,
+    required String paymentMethod,
+    String? reference,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
       // Call backend to add balance
-      final response = await _apiService.addBalance(amount);
+      final response = await _apiService.addBalance(
+        amount: amount,
+        paymentMethod: paymentMethod,
+        reference: reference,
+      );
 
       if (response['success'] == true) {
-        _balance = response['new_balance']?.toDouble() ?? _balance;
+        // The new API returns newBalance instead of balance
+        _balance = response['newBalance']?.toDouble() ??
+                   response['balance']?.toDouble() ??
+                   _balance;
 
         // Save to local storage
         final prefs = await SharedPreferences.getInstance();
@@ -81,7 +94,7 @@ class BalanceProvider with ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        _errorMessage = response['message'] ?? 'Failed to add balance';
+        _errorMessage = response['error'] ?? 'Failed to add balance';
         _isLoading = false;
         notifyListeners();
         return false;
@@ -111,7 +124,7 @@ class BalanceProvider with ChangeNotifier {
       final response = await _apiService.getTransactionHistory();
 
       if (response['success'] == true) {
-        final List<dynamic> transactionData = response['transactions'] ?? [];
+        final List<dynamic> transactionData = response['data'] ?? [];
         _transactions = transactionData
             .map((json) => Transaction.fromJson(json))
             .toList();

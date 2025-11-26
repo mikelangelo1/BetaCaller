@@ -49,5 +49,14 @@
 	<string>BetaCaller needs access to your contacts to help you make calls easily.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>BetaCaller needs access to your microphone to make voice calls.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>BetaCaller uses Face ID to securely authenticate and protect your account.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

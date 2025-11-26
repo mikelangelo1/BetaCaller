@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:beta_caller/providers/call_provider.dart';
 import 'package:beta_caller/providers/balance_provider.dart';
 import 'package:beta_caller/screens/calling/calling_screen.dart';
+import 'package:beta_caller/screens/balance/add_balance_screen.dart';
 import 'package:beta_caller/utils/app_theme.dart';
+import 'package:beta_caller/widgets/call_rate_display.dart';
 
 class DialerTab extends StatefulWidget {
   const DialerTab({super.key});
@@ -131,129 +133,11 @@ class _DialerTabState extends State<DialerTab> with SingleTickerProviderStateMix
   }
 
   void _showAddBalanceDialog(BuildContext context, BalanceProvider balanceProvider) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.darkCardBackground : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: AppTheme.primaryGradient,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.account_balance_wallet,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Add Balance',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF1A1A2E),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Current: ${balanceProvider.formattedBalance}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? Colors.white54 : Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Quick amount buttons
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _buildAmountButton('\$5', 5.0, isDark),
-                  _buildAmountButton('\$10', 10.0, isDark),
-                  _buildAmountButton('\$20', 20.0, isDark),
-                  _buildAmountButton('\$50', 50.0, isDark),
-                  _buildAmountButton('\$100', 100.0, isDark),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Add credit button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    // TODO: Navigate to payment screen
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('Payment integration coming soon!'),
-                        backgroundColor: AppTheme.primaryColor,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: AppTheme.primaryColor,
-                  ),
-                  child: const Text('Add Credit', style: TextStyle(fontSize: 16)),
-                ),
-              ),
-            ],
-          ),
-        ),
+    // Navigate to Add Balance Screen
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const AddBalanceScreen(),
       ),
-    );
-  }
-
-  Widget _buildAmountButton(String label, double amount, bool isDark) {
-    return ElevatedButton(
-      onPressed: () {
-        // Handle amount selection
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isDark
-          ? AppTheme.darkCardBackground
-          : Colors.grey.shade100,
-        foregroundColor: isDark ? Colors.white : AppTheme.primaryColor,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: isDark ? Colors.white24 : Colors.grey.shade300,
-          ),
-        ),
-      ),
-      child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -420,6 +304,10 @@ class _DialerTabState extends State<DialerTab> with SingleTickerProviderStateMix
                     ),
                   ),
                 ),
+
+                // Call rate display
+                if (_phoneNumber.isNotEmpty && _phoneNumber.length >= 8)
+                  CallRateDisplay(phoneNumber: _phoneNumber),
 
                 // Dial pad - takes remaining space
                 Expanded(

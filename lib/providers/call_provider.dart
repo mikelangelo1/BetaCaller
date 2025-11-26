@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:beta_caller/models/call_model.dart';
-import 'package:beta_caller/services/twilio_service.dart';
+import 'package:beta_caller/services/voip_call_service.dart';
 import 'package:beta_caller/services/database_service.dart';
 
 class CallProvider with ChangeNotifier {
-  final TwilioService _twilioService = TwilioService();
+  final VoipCallService _voipService = VoipCallService();
   final DatabaseService _databaseService = DatabaseService();
 
   CallModel? _activeCall;
@@ -18,13 +18,32 @@ class CallProvider with ChangeNotifier {
   bool get isCallInProgress => _isCallInProgress;
 
   CallProvider() {
-    // Auto-initialize with demo token
-    _initializeDemo();
+    // Don't auto-initialize to prevent app startup crashes
+    // Initialization will happen after login
+    debugPrint('CallProvider created');
+  }
+
+  /// Get the VoIP service for direct access if needed
+  VoipCallService get voipService => _voipService;
+
+  /// Get current VoIP provider name
+  String? get currentProviderName {
+    final provider = _voipService.currentProvider;
+    if (provider == null) return null;
+    switch (provider) {
+      case VoipProvider.voximplant:
+        return 'Voximplant';
+      case VoipProvider.twilio:
+        return 'Twilio';
+      case VoipProvider.telnyx:
+        return 'Telnyx';
+    }
   }
 
   Future<void> _initializeDemo() async {
     try {
-      await _twilioService.initialize('demo-token-for-testing');
+      // VoIP service doesn't need explicit initialization
+      // Token is fetched on demand from the backend
       await loadCallHistory();
       _isInitialized = true;
       notifyListeners();
@@ -33,9 +52,9 @@ class CallProvider with ChangeNotifier {
     }
   }
 
-  Future<void> initialize(String twilioToken) async {
+  Future<void> initialize([String? token]) async {
     try {
-      await _twilioService.initialize(twilioToken);
+      // VoIP service handles token management internally
       await loadCallHistory();
       _isInitialized = true;
       notifyListeners();
@@ -59,32 +78,75 @@ class CallProvider with ChangeNotifier {
 
       notifyListeners();
 
-      // Make the call using Twilio
-      final success = await _twilioService.makeCall(phoneNumber);
+      // Make the call using the VoIP service (multi-provider with failover)
+      await _voipService.initiateCall(to: phoneNumber, contactName: contactName);
 
-      if (success) {
-        _activeCall = _activeCall!.copyWith(callStatus: CallStatus.ringing);
-        notifyListeners();
-      } else {
-        _activeCall = _activeCall!.copyWith(callStatus: CallStatus.failed);
-        _isCallInProgress = false;
-        await _saveCallToHistory(_activeCall!);
-        _activeCall = null;
-        notifyListeners();
-      }
+      // Update call status based on VoIP service state
+      _activeCall = _activeCall!.copyWith(callStatus: CallStatus.ringing);
+      notifyListeners();
+
+      // Listen to call state changes from VoIP service
+      _voipService.addListener(_onVoipStateChanged);
     } catch (e) {
       debugPrint('Error making call: $e');
+      _activeCall = _activeCall?.copyWith(callStatus: CallStatus.failed);
       _isCallInProgress = false;
+      if (_activeCall != null) {
+        await _saveCallToHistory(_activeCall!);
+      }
       _activeCall = null;
       notifyListeners();
+      rethrow;
     }
+  }
+
+  void _onVoipStateChanged() {
+    if (_activeCall == null) return;
+
+    final voipCall = _voipService.activeCall;
+    if (voipCall == null) return;
+
+    // Map VoIP call state to CallStatus
+    CallStatus newStatus;
+    switch (voipCall.state) {
+      case VoipCallState.connecting:
+        newStatus = CallStatus.connecting;
+        break;
+      case VoipCallState.ringing:
+        newStatus = CallStatus.ringing;
+        break;
+      case VoipCallState.active:
+        newStatus = CallStatus.inProgress;
+        break;
+      case VoipCallState.held:
+        newStatus = CallStatus.onHold;
+        break;
+      case VoipCallState.ended:
+        newStatus = CallStatus.ended;
+        break;
+      case VoipCallState.failed:
+        newStatus = CallStatus.failed;
+        break;
+      default:
+        newStatus = _activeCall!.callStatus;
+    }
+
+    _activeCall = _activeCall!.copyWith(
+      callStatus: newStatus,
+      duration: voipCall.durationSeconds,
+      cost: voipCall.estimatedCost,
+    );
+    notifyListeners();
   }
 
   Future<void> endCall() async {
     if (_activeCall == null) return;
 
     try {
-      await _twilioService.endCall();
+      // Stop listening to VoIP state changes
+      _voipService.removeListener(_onVoipStateChanged);
+
+      await _voipService.endCall();
 
       final endedCall = _activeCall!.copyWith(callStatus: CallStatus.ended);
       await _saveCallToHistory(endedCall);
@@ -138,6 +200,15 @@ class CallProvider with ChangeNotifier {
     }
   }
 
+  Future<void> deleteMultipleCallsFromHistory(List<String> callIds) async {
+    try {
+      await _databaseService.deleteMultipleCalls(callIds);
+      await loadCallHistory();
+    } catch (e) {
+      debugPrint('Error deleting multiple calls: $e');
+    }
+  }
+
   Future<void> clearCallHistory() async {
     try {
       await _databaseService.clearCallHistory();
@@ -145,6 +216,19 @@ class CallProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error clearing call history: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> getCallStatistics() async {
+    try {
+      return await _databaseService.getCallStatistics();
+    } catch (e) {
+      debugPrint('Error getting call statistics: $e');
+      return {
+        'total_calls': 0,
+        'total_duration': 0,
+        'total_cost': 0.0,
+      };
     }
   }
 

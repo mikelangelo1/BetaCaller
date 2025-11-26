@@ -362,3 +362,21 @@ For issues or questions:
 - Backend API issues: Create an issue in the repository
 - Clerk authentication: https://clerk.com/docs
 - Twilio integration: https://www.twilio.com/docs
+
+
+
+
+  Running the Stack:
+
+  # Start services
+  docker-compose up -d
+
+  # Stop services
+  docker-compose down
+
+  # View logs
+  docker-compose logs -f api
+  docker-compose logs -f postgres
+
+  # Rebuild after code changes
+  docker-compose down && docker-compose build && docker-compose up -d

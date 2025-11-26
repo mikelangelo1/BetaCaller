@@ -160,12 +160,12 @@ class _CallingScreenState extends State<CallingScreen> with TickerProviderStateM
                 height: double.infinity,
                 child: Column(
                   children: [
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 30),
 
                     // Avatar with ripples
                         SizedBox(
-                          width: 180,
-                          height: 180,
+                          width: 160,
+                          height: 160,
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
@@ -178,8 +178,8 @@ class _CallingScreenState extends State<CallingScreen> with TickerProviderStateM
                                     return Transform.scale(
                                       scale: 1 + (_rippleAnimation.value * 0.5),
                                       child: Container(
-                                        width: 180,
-                                        height: 180,
+                                        width: 160,
+                                        height: 160,
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           border: Border.all(
@@ -200,8 +200,8 @@ class _CallingScreenState extends State<CallingScreen> with TickerProviderStateM
                                     return Transform.scale(
                                       scale: 1 + (delayed * 0.5),
                                       child: Container(
-                                        width: 180,
-                                        height: 180,
+                                        width: 160,
+                                        height: 160,
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           border: Border.all(
@@ -230,7 +230,7 @@ class _CallingScreenState extends State<CallingScreen> with TickerProviderStateM
                           ),
                         ),
 
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 24),
 
                         // Contact name
                         Padding(
@@ -261,7 +261,7 @@ class _CallingScreenState extends State<CallingScreen> with TickerProviderStateM
                           ),
                         ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
                     // Status/Duration
                     if (callStatus == CallStatus.connected)
@@ -307,9 +307,9 @@ class _CallingScreenState extends State<CallingScreen> with TickerProviderStateM
                         _buildControlButtons()
                     else
                       // Show placeholder space when not connected to maintain layout
-                      const SizedBox(height: 120),
+                      const SizedBox(height: 100),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 24),
 
                     // End call button - always visible
                     Padding(
@@ -351,8 +351,8 @@ class _CallingScreenState extends State<CallingScreen> with TickerProviderStateM
 
   Widget _buildMainAvatar() {
     return Container(
-      width: 140,
-      height: 140,
+      width: 120,
+      height: 120,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
@@ -374,7 +374,7 @@ class _CallingScreenState extends State<CallingScreen> with TickerProviderStateM
       ),
       child: const Icon(
         Icons.person_rounded,
-        size: 70,
+        size: 60,
         color: Colors.white,
       ),
     );

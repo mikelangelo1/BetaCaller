@@ -99,6 +99,24 @@ class DatabaseService {
     );
   }
 
+  Future<int> deleteMultipleCalls(List<String> callIds) async {
+    if (callIds.isEmpty) return 0;
+
+    final db = await database;
+    final batch = db.batch();
+
+    for (final callId in callIds) {
+      batch.delete(
+        _callHistoryTable,
+        where: 'id = ?',
+        whereArgs: [callId],
+      );
+    }
+
+    final results = await batch.commit();
+    return results.length;
+  }
+
   Future<int> clearCallHistory() async {
     final db = await database;
     return await db.delete(_callHistoryTable);

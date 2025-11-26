@@ -33,9 +33,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     final success = await authProvider.register(
-      _emailController.text.trim(),
-      _passwordController.text,
-      _phoneController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      firstName: '', // Add form fields for these if needed
+      lastName: '',
+      phoneNumber: _phoneController.text.trim(),
     );
 
     if (!mounted) return;
